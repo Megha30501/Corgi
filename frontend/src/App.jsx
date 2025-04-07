@@ -1,6 +1,11 @@
+import React from 'react';
+import Landing from './components/LandingPage';
+
 function App() {
   return (
-  <p>Corgi</p>
+    <div>
+      <Landing />
+    </div>
   );
 }
 
