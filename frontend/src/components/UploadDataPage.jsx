@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 const UploadDataPage = () => {
   const [files, setFiles] = useState([]);
   const [claimAmount, setClaimAmount] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleFileChange = (event) => {
     const selectedFiles = Array.from(event.target.files);
@@ -20,7 +23,7 @@ const UploadDataPage = () => {
     setFiles(files.filter((_, index) => index !== indexToRemove));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (files.length === 0) {
       alert('Please upload at least one document');
@@ -30,9 +33,47 @@ const UploadDataPage = () => {
       alert('Please enter the claim amount');
       return;
     }
-    // Here you would typically send the files and claim amount to your backend
-    console.log('Files:', files);
-    console.log('Claim Amount:', claimAmount);
+
+    // Show loading state
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      // Simulate API call with dummy data
+      // In a real implementation, you would use axios or fetch to call your backend
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
+      
+      // Dummy response - in real implementation, this would come from your backend
+      // For testing, randomly decide if claim is approved (1) or not (0)
+      const isApproved = Math.random() > 0.5;
+      
+      if (isApproved) {
+        // Claim approved
+        setResult({
+          approved: true,
+          amount: parseFloat(claimAmount),
+          breakdown: {
+            security_deposit: parseFloat(claimAmount) * 0.6,
+            pet_deposit: parseFloat(claimAmount) * 0.2,
+            outstanding_rent: parseFloat(claimAmount) * 0.2,
+            damages: 0,
+            credits: 0
+          }
+        });
+      } else {
+        // Claim not approved
+        setResult({
+          approved: false,
+          reason: "Based on our analysis of your documents, we cannot approve your claim at this time. Please ensure all required documentation is complete and accurate."
+        });
+      }
+    } catch (err) {
+      setError('An error occurred while processing your claim. Please try again later.');
+      console.error('Error processing claim:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -132,12 +173,52 @@ const UploadDataPage = () => {
             </div>
           )}
 
+          {loading && (
+            <div className="mb-6 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mr-3"></div>
+              <span className="text-gray-700">Analyzing your documents...</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          {result && (
+            <div className={`mb-6 p-4 rounded-lg ${result.approved ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {result.approved ? (
+                <>
+                  <h2 className="text-xl font-bold mb-2">Congratulations! Your claim has been approved.</h2>
+                  <p className="mb-2">Total Amount: ${result.amount.toFixed(2)}</p>
+                  <div className="mt-2">
+                    <h3 className="font-semibold">Breakdown:</h3>
+                    <ul className="list-disc pl-5">
+                      {Object.entries(result.breakdown).map(([key, value]) => (
+                        <li key={key}>
+                          {key.replace(/_/g, ' ').toUpperCase()}: ${value.toFixed(2)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-bold mb-2">Sorry, your claim has not been approved.</h2>
+                  <p>{result.reason}</p>
+                </>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-center">
             <button
               type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition duration-300"
+              className={`bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition duration-300 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={loading}
             >
-              Submit Claim
+              {loading ? 'Processing...' : 'Submit Claim'}
             </button>
           </div>
         </form>
